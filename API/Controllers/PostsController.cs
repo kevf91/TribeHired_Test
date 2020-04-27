@@ -30,16 +30,16 @@ namespace API.Controllers
             {
 
                 var response = _context.Post
-                                    .Include(p => p.Comments)
-                                    .Select(p =>
-                                        new {
-                                            post_id = p.Id,
-                                            post_title = p.Title,
-                                            post_body = p.Body,
-                                            total_number_of_comments = p.Comments.Count(),
-                                        })
-                                    .OrderBy(p => p.total_number_of_comments)
-                                    .ToList();
+                                .Include(p => p.Comments)
+                                .Select(p =>
+                                    new {
+                                        post_id = p.Id,
+                                        post_title = p.Title,
+                                        post_body = p.Body,
+                                        total_number_of_comments = p.Comments.Count(),
+                                    })
+                                .OrderBy(p => p.total_number_of_comments)
+                                .ToList();
 
                 return Json(response);
             }
@@ -49,8 +49,8 @@ namespace API.Controllers
             }
         }
 
-        [HttpPost("getcommentlist")]
-        public JsonResult GetCommentList([FromBody] CommentModel searchModel)
+        [HttpPost("searchcomments")]
+        public JsonResult SearchComments([FromBody] CommentModel searchModel)
         {
             try
             {
