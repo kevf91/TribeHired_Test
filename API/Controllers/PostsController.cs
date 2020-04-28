@@ -2,12 +2,10 @@
 using API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Linq.Dynamic.Core;
+using System.Reflection;
 
 namespace API.Controllers
 {
@@ -50,40 +48,40 @@ namespace API.Controllers
         }
 
         [HttpPost("searchcomments")]
-        public JsonResult SearchComments([FromBody] CommentModel searchModel)
+        public JsonResult SearchComments([FromBody] CommentSearchModel searchModel)
         {
             try
             {
+                PropertyInfo[] propInfo = searchModel.GetType().GetProperties();
+
                 var response = _context.Comment.ToList();
 
-                // Id filter
-                if (searchModel.Id > 0)
+                foreach (var prop in propInfo)
                 {
-                    response = response.Where(c => c.Id == searchModel.Id).ToList();
-                }
+                    // String type
+                    if(prop.PropertyType == typeof(string))
+                    {
+                        if (prop.GetValue(searchModel) != null)
+                        {
+                            var data = prop.GetValue(searchModel).ToString();
+                            string query = string.Format("{0}.Contains(@0)", prop.Name.ToString());
+                            response = response.AsQueryable()
+                                        .Where(query, data)
+                                        .ToList();
+                        }
+                    }
+                    // Number Type
+                    else
+                    {
+                        if(prop.GetValue(searchModel) != null)
+                        {
+                            var query = prop.GetValue(searchModel).ToString();
+                            response = response.AsQueryable()
+                                        .Where(string.Format("{0} == ({1})", prop.Name.ToString(), query))
+                                        .ToList();
+                        }
+                    }
 
-                // PostId filter
-                if (searchModel.PostId > 0)
-                {
-                    response = response.Where(c => c.PostId == searchModel.PostId).ToList();
-                }
-
-                // Name filter
-                if (!string.IsNullOrEmpty(searchModel.Name))
-                {
-                    response = response.Where(c => c.Name.Contains(searchModel.Name)).ToList();
-                }
-
-                // Email filter
-                if (!string.IsNullOrEmpty(searchModel.Email))
-                {
-                    response = response.Where(c => c.Email.Contains(searchModel.Email)).ToList();
-                }
-
-                // Body filter
-                if (!string.IsNullOrEmpty(searchModel.Body))
-                {
-                    response = response.Where(c => c.Body.Contains(searchModel.Body)).ToList();
                 }
 
                 return Json(response);
