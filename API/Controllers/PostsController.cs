@@ -57,34 +57,26 @@ namespace API.Controllers
                 PropertyInfo[] propInfo = searchModel.GetType().GetProperties();
                 foreach (var prop in propInfo)
                 {
-                    // String type
-                    if(prop.PropertyType == typeof(string))
+                    if (prop.GetValue(searchModel) != null)
                     {
-                        if (prop.GetValue(searchModel) != null)
+                        // Generate query
+                        string query = "";
+                        if (prop.PropertyType == typeof(string))
                         {
-                            // Generate query
-                            string query = string.Format("{0}.Contains(@0)", prop.Name.ToString());
-                            // Get Value base on this property
-                            var searchValue = prop.GetValue(searchModel).ToString();
-                            // execute
-                            response = response.Where(query, searchValue)
-;
+                            // String type query
+                            query = string.Format("{0}.Contains(@0)", prop.Name.ToString());
                         }
-                    }
-                    // Number Type
-                    else
-                    {
-                        if(prop.GetValue(searchModel) != null)
+                        else
                         {
-                            // Generate query
-                            string query = string.Format("{0} == @0", prop.Name.ToString());
-                            // Get Value base on this property
-                            var searchValue = prop.GetValue(searchModel).ToString();
-                            // execute
-                            response = response.Where(query, searchValue);
+                            // Number Type query
+                            query = string.Format("{0} == @0", prop.Name.ToString());
                         }
-                    }
 
+                        // Get Value base on this property
+                        var searchValue = prop.GetValue(searchModel).ToString();
+                        // execute
+                        response = response.Where(query, searchValue);
+                    }
                 }
 
                 return Json(response.ToList());
