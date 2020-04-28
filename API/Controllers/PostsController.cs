@@ -26,7 +26,6 @@ namespace API.Controllers
         {
             try
             {
-
                 var response = _context.Post
                                 .Include(p => p.Comments)
                                 .Select(p =>
@@ -52,10 +51,10 @@ namespace API.Controllers
         {
             try
             {
+                var response = _context.Comment.AsQueryable();
+
+                // Get all the propertyInfo of searchModel
                 PropertyInfo[] propInfo = searchModel.GetType().GetProperties();
-
-                var response = _context.Comment.ToList();
-
                 foreach (var prop in propInfo)
                 {
                     // String type
@@ -63,11 +62,13 @@ namespace API.Controllers
                     {
                         if (prop.GetValue(searchModel) != null)
                         {
-                            var data = prop.GetValue(searchModel).ToString();
+                            // Generate query
                             string query = string.Format("{0}.Contains(@0)", prop.Name.ToString());
-                            response = response.AsQueryable()
-                                        .Where(query, data)
-                                        .ToList();
+                            // Get Value base on this property
+                            var searchValue = prop.GetValue(searchModel).ToString();
+                            // execute
+                            response = response.Where(query, searchValue)
+;
                         }
                     }
                     // Number Type
@@ -75,16 +76,18 @@ namespace API.Controllers
                     {
                         if(prop.GetValue(searchModel) != null)
                         {
-                            var query = prop.GetValue(searchModel).ToString();
-                            response = response.AsQueryable()
-                                        .Where(string.Format("{0} == ({1})", prop.Name.ToString(), query))
-                                        .ToList();
+                            // Generate query
+                            string query = string.Format("{0} == @0", prop.Name.ToString());
+                            // Get Value base on this property
+                            var searchValue = prop.GetValue(searchModel).ToString();
+                            // execute
+                            response = response.Where(query, searchValue);
                         }
                     }
 
                 }
 
-                return Json(response);
+                return Json(response.ToList());
             }
             catch (Exception ex)
             {
